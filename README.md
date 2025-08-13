@@ -42,7 +42,7 @@ Aproximadores universales de funciones para mapear entre espacios multidimension
 
 ## Prerrequisitos
 
-- Álgebra lineal avanzada
-- Análisis real y funcional
+- Álgebra lineal
+- Análisis real
 - Nociones básicas de topología
 - Programación en Python
