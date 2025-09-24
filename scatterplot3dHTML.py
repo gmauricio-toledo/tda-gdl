@@ -64,8 +64,10 @@ def scatter_plot_3d_plotly(X,y=None,filename='plot3d.html',fig_title='Plot'):
     assert X.shape[1] == 3, "X debe tener 3 dimensiones"
     if y is not None:
         assert X.shape[0] == y.shape[0], "X y y deben tener la misma cantidad de puntos"
+        colors = y  # Usar las etiquetas reales
     else:
-        y = np.zeros(X.shape[0])
+        colors = np.zeros(X.shape[0])  # Usar ceros si no hay etiquetas
+    
     N = X.shape[0]
     # Extraer coordenadas x, y, z
     x_coord = X[:, 0]
@@ -80,11 +82,11 @@ def scatter_plot_3d_plotly(X,y=None,filename='plot3d.html',fig_title='Plot'):
         mode='markers',
         marker=dict(
             size=3,
-            color=y,  # Colorear por valor de clase
-            colorscale='Viridis',  # Escala de colores
+            color=colors,  # <-- Usar colors en lugar de y
+            colorscale='Viridis',
             opacity=0.8
         ),
-        text=[f'{y[i]}' for i in range(N)],  # Texto al hacer hover (opcional)
+        text=[f'{colors[i]}' for i in range(N)],  # <-- También aquí
         hovertemplate='%{text}'
     )])
 
