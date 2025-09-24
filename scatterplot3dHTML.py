@@ -68,15 +68,15 @@ def scatter_plot_3d_plotly(X,y=None,filename='plot3d.html',fig_title='Plot'):
         y = np.zeros(X.shape[0])
     N = X.shape[0]
     # Extraer coordenadas x, y, z
-    x = X[:, 0]
-    y = X[:, 1]
-    z = X[:, 2]
+    x_coord = X[:, 0]
+    y_coord = X[:, 1]
+    z_coord = X[:, 2]
 
     # Crear la figura 3D
     fig = go.Figure(data=[go.Scatter3d(
-        x=x,
-        y=y,
-        z=z,
+        x=x_coord,
+        y=y_coord,
+        z=z_coord,
         mode='markers',
         marker=dict(
             size=3,
