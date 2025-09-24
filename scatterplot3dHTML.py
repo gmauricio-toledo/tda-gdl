@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import plotly.offline as offline
 
 
-def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
+def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', fig_title='Plot'):
     """
     Generate an interactive 3D scatter plot using Plotly.
     
@@ -17,7 +17,11 @@ def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
         
     y : array-like of shape (n_samples,), default=None
         Target values used for coloring the points. If None, all points 
-        will be colored uniformly and hover is disabled.
+        will be colored uniformly.
+        
+    hover_info : array-like of shape (n_samples,), default=None
+        Custom text to display when hovering over points. If None and y is provided,
+        shows class labels. If None and y is None, hover is disabled.
         
     filename : str, default='plot3d.html'
         Name of the output HTML file where the plot will be saved.
@@ -53,6 +57,11 @@ def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
     >>> 
     >>> # Create plot without target coloring
     >>> scatter_plot_3d_plotly(X_pca, filename='iris_no_labels.html')
+    >>> 
+    >>> # Create plot with custom hover text
+    >>> custom_text = [f'Sample {i}' for i in range(len(X_pca))]
+    >>> scatter_plot_3d_plotly(X_pca, y=iris.target, hover_info=custom_text,
+    ...                       filename='iris_custom_hover.html')
     
     Notes
     -----
@@ -60,7 +69,8 @@ def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
     - Coordinate axes are hidden by default to focus on the data distribution.
     - The generated HTML file can be opened in any web browser.
     - For large datasets (>10,000 points), consider downsampling for better performance.
-    - When y=None, hover information is disabled for cleaner visualization.
+    - When hover_info=None and y=None, hover information is disabled for cleaner visualization.
+    - When hover_info is provided, it overrides default class label hover text.
     """
     assert X.shape[1] == 3, "X debe tener 3 dimensiones"
     
@@ -72,6 +82,9 @@ def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
     if y is not None:
         assert X.shape[0] == y.shape[0], "X y y deben tener la misma cantidad de puntos"
         
+    if hover_info is not None:
+        assert X.shape[0] == len(hover_info), "X y hover_info deben tener la misma cantidad de puntos"
+        
         # Obtener labels únicos y mapear a números secuenciales para colores discretos
         unique_labels = np.unique(y)
         n_classes = len(unique_labels)
@@ -79,6 +92,15 @@ def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
         # Mapear cada label único a un número secuencial
         label_to_num = {label: i for i, label in enumerate(unique_labels)}
         numeric_labels = [label_to_num[label] for label in y]
+        
+        # Determinar texto para hover
+        if hover_info is not None:
+            hover_text = [f'{text}' for text in hover_info]
+            hover_template = '%{text}<extra></extra>'
+        else:
+            # Si no hay hover_info personalizado, usar las etiquetas de clase
+            hover_text = [f'{label}' for label in y]
+            hover_template = 'Clase: %{text}<extra></extra>'
         
         # Para pocas clases, usar colores específicos más contrastantes
         if n_classes <= 10:
@@ -97,8 +119,8 @@ def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
                     color=point_colors,  # Colores específicos
                     opacity=0.8
                 ),
-                text=[f'{label}' for label in y],
-                hovertemplate='Clase: %{text}<extra></extra>'
+                text=hover_text,
+                hovertemplate=hover_template
             )])
         else:
             # Para muchas clases, usar escala continua de Plotly
@@ -115,23 +137,39 @@ def scatter_plot_3d_plotly(X, y=None, filename='plot3d.html', fig_title='Plot'):
                     cmax=n_classes-1,
                     opacity=0.8
                 ),
-                text=[f'{label}' for label in y],
-                hovertemplate='Clase: %{text}<extra></extra>'
+                text=hover_text,
+                hovertemplate=hover_template
             )])
     else:
-        # Sin etiquetas: color uniforme y sin hover
-        fig = go.Figure(data=[go.Scatter3d(
-            x=x_coord,
-            y=y_coord,
-            z=z_coord,
-            mode='markers',
-            marker=dict(
-                size=3,
-                color='blue',
-                opacity=0.8
-            ),
-            hoverinfo='none'  # Desactivar hover completamente
-        )])
+        # Sin etiquetas: verificar si hay hover personalizado
+        if hover_info is not None:
+            fig = go.Figure(data=[go.Scatter3d(
+                x=x_coord,
+                y=y_coord,
+                z=z_coord,
+                mode='markers',
+                marker=dict(
+                    size=3,
+                    color='blue',
+                    opacity=0.8
+                ),
+                text=[f'{text}' for text in hover_info],
+                hovertemplate='%{text}<extra></extra>'
+            )])
+        else:
+            # Sin etiquetas ni hover personalizado: sin hover
+            fig = go.Figure(data=[go.Scatter3d(
+                x=x_coord,
+                y=y_coord,
+                z=z_coord,
+                mode='markers',
+                marker=dict(
+                    size=3,
+                    color='blue',
+                    opacity=0.8
+                ),
+                hoverinfo='none'  # Desactivar hover completamente
+            )])
 
     # Configurar el layout
     fig.update_layout(
