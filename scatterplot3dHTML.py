@@ -33,44 +33,6 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
     -------
     None
         The function saves the plot as an HTML file and does not return any value.
-    
-    Raises
-    ------
-    AssertionError
-        If X does not have exactly 3 dimensions.
-        If X and y have different number of samples.
-    
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from sklearn.decomposition import PCA
-    >>> from sklearn.datasets import load_iris
-    >>> 
-    >>> # Load iris dataset and apply PCA
-    >>> iris = load_iris()
-    >>> X_pca = PCA(n_components=3).fit_transform(iris.data)
-    >>> 
-    >>> # Create 3D scatter plot colored by target
-    >>> scatter_plot_3d_plotly(X_pca, y=iris.target, 
-    ...                       filename='iris_pca.html',
-    ...                       fig_title='Iris Dataset - PCA 3D')
-    >>> 
-    >>> # Create plot without target coloring
-    >>> scatter_plot_3d_plotly(X_pca, filename='iris_no_labels.html')
-    >>> 
-    >>> # Create plot with custom hover text
-    >>> custom_text = [f'Sample {i}' for i in range(len(X_pca))]
-    >>> scatter_plot_3d_plotly(X_pca, y=iris.target, hover_info=custom_text,
-    ...                       filename='iris_custom_hover.html')
-    
-    Notes
-    -----
-    - The plot uses discrete colors for categorical data.
-    - Coordinate axes are hidden by default to focus on the data distribution.
-    - The generated HTML file can be opened in any web browser.
-    - For large datasets (>10,000 points), consider downsampling for better performance.
-    - When hover_info=None and y=None, hover information is disabled for cleaner visualization.
-    - When hover_info is provided, it overrides default class label hover text.
     """
     assert X.shape[1] == 3, "X debe tener 3 dimensiones"
     
@@ -85,6 +47,7 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
     if hover_info is not None:
         assert X.shape[0] == len(hover_info), "X y hover_info deben tener la misma cantidad de puntos"
         
+    if y is not None:
         # Obtener labels únicos y mapear a números secuenciales para colores discretos
         unique_labels = np.unique(y)
         n_classes = len(unique_labels)
@@ -116,7 +79,7 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                 mode='markers',
                 marker=dict(
                     size=3,
-                    color=point_colors,  # Colores específicos
+                    color=point_colors,
                     opacity=0.8
                 ),
                 text=hover_text,
@@ -132,7 +95,7 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                 marker=dict(
                     size=3,
                     color=numeric_labels,
-                    colorscale='turbo',  # Escala válida de Plotly con muchos colores
+                    colorscale='turbo',
                     cmin=0,
                     cmax=n_classes-1,
                     opacity=0.8
@@ -168,14 +131,13 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                     color='blue',
                     opacity=0.8
                 ),
-                hoverinfo='none'  # Desactivar hover completamente
+                hoverinfo='none'
             )])
 
     # Configurar el layout
     fig.update_layout(
         title=fig_title,
         scene=dict(
-            # Ocultar ejes coordenados
             xaxis=dict(
                 visible=False,
                 showbackground=False,
@@ -194,14 +156,12 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                 showgrid=False,
                 zeroline=False,
             ),
-            # Configurar cámara y aspecto
             camera=dict(
                 up=dict(x=0, y=0, z=1),
                 center=dict(x=0, y=0, z=0),
                 eye=dict(x=1.2, y=1.2, z=1.2)
             )
         ),
-        # Ocultar elementos de la interfaz
         showlegend=False,
         margin=dict(l=0, r=0, b=0, t=50),
     )
