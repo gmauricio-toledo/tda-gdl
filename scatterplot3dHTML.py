@@ -34,45 +34,48 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
             raise
         
     if y is not None:
-        # Obtener labels únicos y mapear a números secuenciales para colores discretos
+    y = np.asarray(y)
+    assert X.shape[0] == y.shape[0], "X y y deben tener la misma cantidad de puntos"
+
+    # Si y es numérico (float/int), usar escala continua de colores
+    if np.issubdtype(y.dtype, np.number):
+        trace = go.Scatter3d(
+            x=x_coord,
+            y=y_coord,
+            z=z_coord,
+            mode='markers',
+            marker=dict(
+                size=3,
+                color=y,  # Usar los valores de y directamente para el color
+                colorscale='Viridis',  # Escala de colores continua
+                cmin=np.min(y),  # Valor mínimo para la escala
+                cmax=np.max(y),  # Valor máximo para la escala
+                opacity=0.8,
+                colorbar=dict(title='Valor')  # Opcional: agregar barra de color
+            ),
+            text=hover_info if hover_info is not None else [str(val) for val in y],
+            hovertemplate='Valor: %{text}<extra></extra>'
+        )
+    else:
+        # Lógica original para etiquetas categóricas
         unique_labels = np.unique(y)
         n_classes = len(unique_labels)
-        
-        # Mapear cada label único a un número secuencial
         label_to_num = {label: i for i, label in enumerate(unique_labels)}
         numeric_labels = [label_to_num[label] for label in y]
-        
-        # Determinar texto para hover
-        if hover_info is not None:
-            hover_text = hover_info
-            hover_template = '%{text}<extra></extra>'
-        else:
-            # Si no hay hover_info personalizado, usar las etiquetas de clase
-            hover_text = [str(label) for label in y]
-            hover_template = 'Clase: %{text}<extra></extra>'
-        
-        # Para pocas clases, usar colores específicos más contrastantes
+
         if n_classes <= 10:
-            # Colores discretos bien diferenciados
-            discrete_colors = ['red', 'blue', 'green', 'orange', 'purple', 
-                             'brown', 'pink', 'gray', 'olive', 'cyan']
+            discrete_colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
             point_colors = [discrete_colors[i] for i in numeric_labels]
-            
             trace = go.Scatter3d(
                 x=x_coord,
                 y=y_coord,
                 z=z_coord,
                 mode='markers',
-                marker=dict(
-                    size=3,
-                    color=point_colors,
-                    opacity=0.8
-                ),
-                text=hover_text,
-                hovertemplate=hover_template
+                marker=dict(size=3, color=point_colors, opacity=0.8),
+                text=hover_info if hover_info is not None else [str(label) for label in y],
+                hovertemplate='Clase: %{text}<extra></extra>'
             )
         else:
-            # Para muchas clases, usar escala continua de Plotly
             trace = go.Scatter3d(
                 x=x_coord,
                 y=y_coord,
@@ -86,9 +89,11 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                     cmax=n_classes-1,
                     opacity=0.8
                 ),
-                text=hover_text,
-                hovertemplate=hover_template
+                text=hover_info if hover_info is not None else [str(label) for label in y],
+                hovertemplate='Clase: %{text}<extra></extra>'
             )
+
+
     else:
         # Sin etiquetas: verificar si hay hover personalizado
         if hover_info is not None:
