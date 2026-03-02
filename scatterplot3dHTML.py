@@ -1,7 +1,8 @@
+#@title Función para graficar en 3d con plotly
+
 import numpy as np
 import plotly.graph_objects as go
 import plotly.offline as offline
-
 
 def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', fig_title='Plot'):
     """
@@ -19,6 +20,7 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
     y_coord = X[:, 1].tolist()
     z_coord = X[:, 2].tolist()
     
+    # Validaciones iniciales
     if y is not None:
         y = np.asarray(y)
         assert X.shape[0] == y.shape[0], "X y y deben tener la misma cantidad de puntos"
@@ -28,54 +30,16 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
         # Limpiar hover_info: reemplazar None/NaN con string vacío
         try:
             hover_info = [str(text) if text is not None and str(text) != 'nan' else '' for text in hover_info]
-            print(f"8. Hover_info limpio. Primeros 3: {hover_info[:3]}")
+            print(f"Hover_info limpio. Primeros 3: {hover_info[:3]}")
         except Exception as e:
             print(f"ERROR en limpieza de hover_info: {e}")
             raise
-        
+    
+    # CREAR EL TRACE SEGÚN LOS CASOS
+    # Caso 1: Con etiquetas (y no es None)
     if y is not None:
-    y = np.asarray(y)
-    assert X.shape[0] == y.shape[0], "X y y deben tener la misma cantidad de puntos"
-
-    # Si y es numérico (float/int), usar escala continua de colores
-    if np.issubdtype(y.dtype, np.number):
-        trace = go.Scatter3d(
-            x=x_coord,
-            y=y_coord,
-            z=z_coord,
-            mode='markers',
-            marker=dict(
-                size=3,
-                color=y,  # Usar los valores de y directamente para el color
-                colorscale='Viridis',  # Escala de colores continua
-                cmin=np.min(y),  # Valor mínimo para la escala
-                cmax=np.max(y),  # Valor máximo para la escala
-                opacity=0.8,
-                colorbar=dict(title='Valor')  # Opcional: agregar barra de color
-            ),
-            text=hover_info if hover_info is not None else [str(val) for val in y],
-            hovertemplate='Valor: %{text}<extra></extra>'
-        )
-    else:
-        # Lógica original para etiquetas categóricas
-        unique_labels = np.unique(y)
-        n_classes = len(unique_labels)
-        label_to_num = {label: i for i, label in enumerate(unique_labels)}
-        numeric_labels = [label_to_num[label] for label in y]
-
-        if n_classes <= 10:
-            discrete_colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
-            point_colors = [discrete_colors[i] for i in numeric_labels]
-            trace = go.Scatter3d(
-                x=x_coord,
-                y=y_coord,
-                z=z_coord,
-                mode='markers',
-                marker=dict(size=3, color=point_colors, opacity=0.8),
-                text=hover_info if hover_info is not None else [str(label) for label in y],
-                hovertemplate='Clase: %{text}<extra></extra>'
-            )
-        else:
+        # Si y es numérico (float/int), usar escala continua de colores
+        if np.issubdtype(y.dtype, np.number):
             trace = go.Scatter3d(
                 x=x_coord,
                 y=y_coord,
@@ -83,21 +47,60 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                 mode='markers',
                 marker=dict(
                     size=3,
-                    color=numeric_labels,
-                    colorscale='turbo',
-                    cmin=0,
-                    cmax=n_classes-1,
-                    opacity=0.8
+                    color=y.tolist(),  # Usar los valores de y directamente para el color
+                    colorscale='Viridis',
+                    cmin=np.min(y),
+                    cmax=np.max(y),
+                    opacity=0.8,
+                    colorbar=dict(title='Valor')
                 ),
-                text=hover_info if hover_info is not None else [str(label) for label in y],
-                hovertemplate='Clase: %{text}<extra></extra>'
+                text=hover_info if hover_info is not None else [str(val) for val in y],
+                hovertemplate='Valor: %{text}<extra></extra>'
             )
+        else:
+            # Caso: etiquetas categóricas
+            unique_labels = np.unique(y)
+            n_classes = len(unique_labels)
+            label_to_num = {label: i for i, label in enumerate(unique_labels)}
+            numeric_labels = [label_to_num[label] for label in y]
 
-
+            if n_classes <= 10:
+                # Colores discretos para pocas clases
+                discrete_colors = ['red', 'blue', 'green', 'orange', 'purple', 
+                                  'brown', 'pink', 'gray', 'olive', 'cyan']
+                point_colors = [discrete_colors[i % len(discrete_colors)] for i in numeric_labels]
+                trace = go.Scatter3d(
+                    x=x_coord,
+                    y=y_coord,
+                    z=z_coord,
+                    mode='markers',
+                    marker=dict(size=3, color=point_colors, opacity=0.8),
+                    text=hover_info if hover_info is not None else [str(label) for label in y],
+                    hovertemplate='Clase: %{text}<extra></extra>'
+                )
+            else:
+                # Muchas clases: usar escala continua
+                trace = go.Scatter3d(
+                    x=x_coord,
+                    y=y_coord,
+                    z=z_coord,
+                    mode='markers',
+                    marker=dict(
+                        size=3,
+                        color=numeric_labels,
+                        colorscale='turbo',
+                        cmin=0,
+                        cmax=n_classes-1,
+                        opacity=0.8
+                    ),
+                    text=hover_info if hover_info is not None else [str(label) for label in y],
+                    hovertemplate='Clase: %{text}<extra></extra>'
+                )
+    
+    # Caso 2: Sin etiquetas (y es None)
     else:
-        # Sin etiquetas: verificar si hay hover personalizado
+        # Subcaso: con hover personalizado
         if hover_info is not None:
-            
             try:
                 trace = go.Scatter3d(
                     x=x_coord,
@@ -112,7 +115,7 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                     text=hover_info,
                     hovertemplate='%{text}<extra></extra>'
                 )
-                print("12. Trace creado exitosamente")
+                print("Trace creado exitosamente")
             except Exception as e:
                 print(f"ERROR creando trace: {e}")
                 print(f"ERROR tipo: {type(e)}")
@@ -120,7 +123,7 @@ def scatter_plot_3d_plotly(X, y=None, hover_info=None, filename='plot3d.html', f
                 traceback.print_exc()
                 raise
         else:
-            # Sin etiquetas ni hover personalizado: sin hover
+            # Subcaso: sin etiquetas ni hover
             trace = go.Scatter3d(
                 x=x_coord,
                 y=y_coord,
